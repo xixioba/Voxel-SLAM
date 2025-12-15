@@ -221,8 +221,8 @@ template <typename T> Eigen::Vector3d point2vec(const T &pi) {
   return vec;
 }
 
-double time_inc(std::chrono::_V2::system_clock::time_point &t_end,
-                std::chrono::_V2::system_clock::time_point &t_begin);
+double time_inc(std::chrono::system_clock::time_point &t_end,
+                std::chrono::system_clock::time_point &t_begin);
 
 
 class STDescManager {

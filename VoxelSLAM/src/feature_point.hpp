@@ -4,12 +4,42 @@
 #include <ros/ros.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <livox_ros_driver/CustomMsg.h>
+#include <voxel_slam/CustomMsg.h>
 
 typedef pcl::PointXYZINormal PointType;
 using namespace std;
 
-enum LID_TYPE{LIVOX, VELODYNE, OUSTER, HESAI, ROBOSENSE, TARTANAIR};
+enum LID_TYPE{LIVOX, VELODYNE, OUSTER, HESAI, ROBOSENSE, TARTANAIR, RAYZ};
+
+namespace rayz_ros
+{
+struct EIGEN_ALIGN16 RayzPointRos {
+  PCL_ADD_POINT4D;
+  uint16_t h_angle;
+  uint16_t v_angle;
+  uint16_t range;
+  uint16_t ts_10usec;  // relative to header stamp
+  uint8_t intensity;
+  uint8_t vline;
+  uint8_t pluse;
+  uint8_t reserve;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+}
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(rayz_ros::RayzPointRos,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (uint16_t, h_angle, h_angle)
+    (uint16_t, v_angle, v_angle)
+    (uint16_t, range, range)
+    (uint16_t, ts_10usec, ts_10usec)
+    (uint8_t, intensity, intensity)
+    (uint8_t, vline, vline)
+    (uint8_t, pluse, pluse)
+    (uint8_t, reserve, reserve)
+)
 
 namespace velodyne_ros {
   struct EIGEN_ALIGN16 Point {
@@ -100,7 +130,7 @@ public:
   double blind = 1;
   double omega_l = 3610;
 
-  double process(const livox_ros_driver::CustomMsg::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
+  double process(const voxel_slam::CustomMsg::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
   {
     livox_handler(msg, pl_full);
     return msg->header.stamp.toSec();
@@ -131,6 +161,10 @@ public:
       tartanair_handler(msg, pl_full);
       break;
 
+    case RAYZ:
+      rayz_handler(msg, pl_full);
+      break;
+
     default:
       printf("Lidar Type Error\n");
       exit(0);
@@ -139,7 +173,36 @@ public:
     return t0;
   }
 
-  void livox_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
+  void rayz_handler(const sensor_msgs::PointCloud2::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
+  {
+    pcl::PointCloud<rayz_ros::RayzPointRos> pl_orig;
+    pcl::fromROSMsg(*msg, pl_orig);
+
+    int plsize = pl_orig.points.size();
+    pl_full.reserve(plsize);
+    for(int i=0; i<plsize; i++)
+    {
+      PointType ap;
+      ap.x = pl_orig.points[i].x;
+      ap.y = pl_orig.points[i].y;
+      ap.z = pl_orig.points[i].z;
+      ap.intensity = pl_orig[i].intensity;
+      // ap.curvature = 0; // s
+      ap.curvature = pl_orig.points[i].ts_10usec * 1e-5; // s
+
+      if(i % point_filter_num == 0)
+      {
+        if(ap.x*ap.x + ap.y*ap.y + ap.z*ap.z > blind)
+        {
+          pl_full.points.push_back(ap);
+        }
+      }
+
+    }
+
+  }
+
+  void livox_handler(const voxel_slam::CustomMsg::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
   { 
     int plsize = msg->point_num;
     pl_full.reserve(plsize);

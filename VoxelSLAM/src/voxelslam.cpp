@@ -141,7 +141,7 @@ public:
         if(pl.size() > interval_size)
         {
           pub_pl_func(pl, pub);
-          sleep(0.05);
+          std::this_thread::sleep_for(std::chrono::milliseconds(50));
           pl.clear();
         }
       }
@@ -780,7 +780,7 @@ public:
 
     sub_imu = n.subscribe(imu_topic, 80000, imu_handler);
     if(feat.lidar_type == LIVOX)
-      sub_pcl = n.subscribe<livox_ros_driver::CustomMsg>(lid_topic, 1000, pcl_handler);
+      sub_pcl = n.subscribe<voxel_slam::CustomMsg>(lid_topic, 1000, pcl_handler);
     else
       sub_pcl = n.subscribe<sensor_msgs::PointCloud2>(lid_topic, 1000, pcl_handler);
     odom_ekf.imu_topic = imu_topic;
@@ -1535,7 +1535,7 @@ public:
           malloc_trim(0);
         }
 
-        sleep(0.001);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
         continue;
       }
 
@@ -1893,7 +1893,8 @@ public:
 
       if(buf_lba2loop.empty() || loop_detect == 1)
       {
-        sleep(0.01); continue;
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        continue;
       }
       ScanPose *bl_head = nullptr;
       mtx_loop.lock();
@@ -2504,7 +2505,8 @@ public:
     {
       if(multimap_keyframes.empty())
       {
-        sleep(0.1); continue;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        continue;
       }
 
       int smp_flag = 0;
@@ -2522,7 +2524,8 @@ public:
       {
         if(smp_flag == 0)
         {
-          sleep(0.1); continue;
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          continue;
         }
       }
       else
@@ -2533,7 +2536,8 @@ public:
         buf_base++;
         if(localID.size() < wdsize)
         {
-          sleep(0.1); continue;
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          continue;
         }
       }
 

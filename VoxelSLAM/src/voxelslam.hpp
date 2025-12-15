@@ -9,10 +9,20 @@
 #include <Eigen/Eigenvalues>
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <malloc.h>
 #include <geometry_msgs/PoseArray.h>
 #include <pcl/kdtree/kdtree_flann.h>
+
+#if __APPLE__
+#include <stdlib.h>
+#include <malloc/malloc.h>
+#define malloc_trim(x) ((void)0)
+#else
 #include <malloc.h>
+#endif
+
+#include <thread>
+#include <chrono>
+
 #include <gtsam/inference/Symbol.h>
 #include <gtsam/navigation/ImuFactor.h>
 #include <gtsam/navigation/CombinedImuFactor.h>

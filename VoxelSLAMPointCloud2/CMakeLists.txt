@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(voxelslam_pointcloud2)
 find_package(catkin REQUIRED COMPONENTS rviz)
+find_package(rviz REQUIRED)
 catkin_package()
-include_directories(${catkin_INCLUDE_DIRS})
+include_directories(
+  ${catkin_INCLUDE_DIRS}
+  ${rviz_INCLUDE_DIRS}
+)
 link_directories(${catkin_LIBRARY_DIRS})
 
 set(CMAKE_AUTOMOC ON)
@@ -25,7 +29,17 @@ set(SRC_FILES
 
 add_library(${PROJECT_NAME} ${SRC_FILES})
 
-target_link_libraries(${PROJECT_NAME} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+if(NOT DEFINED ENV{CONDA_PREFIX})
+  message(FATAL_ERROR "CONDA_PREFIX is not set in the environment!")
+endif()
+set(CONDA_PREFIX $ENV{CONDA_PREFIX})
+
+target_link_libraries(${PROJECT_NAME}
+  ${QT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${rviz_LIBRARIES}
+  ${CONDA_PREFIX}/lib/librviz_default_plugin.dylib
+)
 
 install(TARGETS
   ${PROJECT_NAME}
