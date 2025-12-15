@@ -1,5 +1,18 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(voxelslam_pointcloud2)
+
+# macOS + Conda Environment Support
+if(APPLE AND DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "Detected macOS conda environment: $ENV{CONDA_PREFIX}")
+    
+    # Add conda include path to compiler flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I$ENV{CONDA_PREFIX}/include")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I$ENV{CONDA_PREFIX}/include")
+    
+    # Also add to include directories for better IDE support
+    include_directories($ENV{CONDA_PREFIX}/include)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS rviz)
 find_package(rviz REQUIRED)
 catkin_package()

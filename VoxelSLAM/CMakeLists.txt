@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(voxel_slam)
 
 set(CMAKE_BUILD_TYPE "Release")
@@ -13,6 +13,18 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread -std=c++0x -std=c++17 -fexceptions")
+
+# macOS + Conda Environment Support
+if(APPLE AND DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "Detected macOS conda environment: $ENV{CONDA_PREFIX}")
+    
+    # Add conda include path to compiler flags
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I$ENV{CONDA_PREFIX}/include")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I$ENV{CONDA_PREFIX}/include")
+    
+    # Also add to include directories for better IDE support
+    include_directories($ENV{CONDA_PREFIX}/include)
+endif()
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
