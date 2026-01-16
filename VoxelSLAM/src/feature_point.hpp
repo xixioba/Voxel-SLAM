@@ -9,7 +9,7 @@
 typedef pcl::PointXYZINormal PointType;
 using namespace std;
 
-enum LID_TYPE{LIVOX, VELODYNE, OUSTER, HESAI, ROBOSENSE, TARTANAIR, RAYZ};
+enum LID_TYPE{LIVOX, VELODYNE, OUSTER, HESAI, ROBOSENSE, TARTANAIR, RAYZ, RAYZ_F360};
 
 namespace rayz_ros
 {
@@ -164,6 +164,10 @@ public:
     case RAYZ:
       rayz_handler(msg, pl_full);
       break;
+    
+    case RAYZ_F360:
+      rayz_handler(msg, pl_full);
+      break;
 
     default:
       printf("Lidar Type Error\n");
@@ -179,27 +183,43 @@ public:
     pcl::fromROSMsg(*msg, pl_orig);
 
     int plsize = pl_orig.points.size();
+    if (plsize == 0) return;
+    
     pl_full.reserve(plsize);
-    for(int i=0; i<plsize; i++)
+
+    for(int i = 0; i < plsize; i++)
     {
+      // NaN check
+      if(std::isnan(pl_orig.points[i].x) || 
+         std::isnan(pl_orig.points[i].y) || 
+         std::isnan(pl_orig.points[i].z)) 
+        continue;
+      
+      // Point sampling filter
+      if(i % point_filter_num != 0) 
+        continue;
+
+      // Blind zone filter
+      double range_sq = pl_orig.points[i].x * pl_orig.points[i].x + 
+                        pl_orig.points[i].y * pl_orig.points[i].y + 
+                        pl_orig.points[i].z * pl_orig.points[i].z;
+      
+      if(range_sq <= blind * blind) 
+        continue;
+      
+      // Construct point after all checks passed
       PointType ap;
       ap.x = pl_orig.points[i].x;
       ap.y = pl_orig.points[i].y;
       ap.z = pl_orig.points[i].z;
-      ap.intensity = pl_orig[i].intensity;
-      // ap.curvature = 0; // s
-      ap.curvature = pl_orig.points[i].ts_10usec * 1e-5; // s
+      ap.intensity = static_cast<float>(pl_orig.points[i].intensity);
+      ap.normal_x = 0;
+      ap.normal_y = 0;
+      ap.normal_z = 0;
+      ap.curvature = pl_orig.points[i].ts_10usec * 1e-5; // 10us to s
 
-      if(i % point_filter_num == 0)
-      {
-        if(ap.x*ap.x + ap.y*ap.y + ap.z*ap.z > blind)
-        {
-          pl_full.points.push_back(ap);
-        }
-      }
-
+      pl_full.points.push_back(ap);
     }
-
   }
 
   void livox_handler(const voxel_slam::CustomMsg::ConstPtr &msg, pcl::PointCloud<PointType> &pl_full)
